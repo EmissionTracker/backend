@@ -1,9 +1,11 @@
 import urllib.request
 import json
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, cast
 
 import jwt
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from jwt.algorithms import RSAAlgorithm
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -18,12 +20,12 @@ def _get_jwks() -> dict:
         return json.loads(response.read())
 
 
-def _get_public_key(token: str) -> str:
+def _get_public_key(token: str) -> RSAPublicKey:
     header = jwt.get_unverified_header(token)
     jwks = _get_jwks()
     for key in jwks["keys"]:
         if key["kid"] == header["kid"]:
-            return jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+            return cast(RSAPublicKey, RSAAlgorithm.from_jwk(json.dumps(key)))
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Public key not found")
 
 
