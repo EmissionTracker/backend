@@ -47,3 +47,25 @@ async def get_tenant_db(
 
 
 TenantDB = Annotated[AsyncSession, Depends(get_tenant_db)]
+
+
+async def require_superadmin(
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    """Verify the caller is a provisioned super-admin.
+
+    Super-admins operate outside any single company, so RLS is not set.
+    Returns the User ORM object so the endpoint has access to it if needed.
+    """
+    cognito_sub = current_user.get("sub")
+    result = await db.execute(select(User).where(User.cognito_sub == cognito_sub))
+    user = result.scalar_one_or_none()
+
+    if user is None or not user.is_superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super-admin access required.",
+        )
+
+    return user
