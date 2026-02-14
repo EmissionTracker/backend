@@ -44,6 +44,7 @@ class User(TenantMixin, Base):
     cognito_sub: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_superadmin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     company: Mapped["Company"] = relationship(back_populates="users")
     user_roles: Mapped[list["UserRole"]] = relationship(back_populates="user")
